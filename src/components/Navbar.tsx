@@ -1,17 +1,33 @@
 
 import { ShoppingCart, User, Menu, LogOut } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const { data: cartItemsCount } = useQuery({
+    queryKey: ['cartCount'],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from('cart_items')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
 
   const handleSignOut = async () => {
     try {
@@ -36,15 +52,16 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-primary">BLUEKING</h1>
+            <Link to="/" className="text-2xl font-bold text-primary">
+              BLUEKING
+            </Link>
           </div>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-gray-700 hover:text-primary transition-colors">Men</a>
-            <a href="#" className="text-gray-700 hover:text-primary transition-colors">Women</a>
-            <a href="#" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</a>
-            <a href="#" className="text-gray-700 hover:text-primary transition-colors">Sale</a>
+            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Men</Link>
+            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Women</Link>
+            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
+            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Sale</Link>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -53,8 +70,18 @@ const Navbar = () => {
                 <Button variant="ghost" size="icon" className="hover:bg-gray-100">
                   <User className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-gray-100 relative"
+                  onClick={() => navigate("/cart")}
+                >
                   <ShoppingCart className="h-5 w-5" />
+                  {cartItemsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground w-5 h-5 rounded-full text-xs flex items-center justify-center">
+                      {cartItemsCount}
+                    </span>
+                  )}
                 </Button>
                 <Button variant="ghost" size="icon" className="hover:bg-gray-100" onClick={handleSignOut}>
                   <LogOut className="h-5 w-5" />
@@ -65,20 +92,24 @@ const Navbar = () => {
                 Sign In
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="md:hidden hover:bg-gray-100" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden hover:bg-gray-100"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
               <Menu className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 animate-fadeIn">
             <div className="flex flex-col space-y-4">
-              <a href="#" className="text-gray-700 hover:text-primary transition-colors">Men</a>
-              <a href="#" className="text-gray-700 hover:text-primary transition-colors">Women</a>
-              <a href="#" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</a>
-              <a href="#" className="text-gray-700 hover:text-primary transition-colors">Sale</a>
+              <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Men</Link>
+              <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Women</Link>
+              <Link to="/" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
+              <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Sale</Link>
             </div>
           </div>
         )}

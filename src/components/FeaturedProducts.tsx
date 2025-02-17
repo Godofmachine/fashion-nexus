@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 
+type ProductSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
+
 const FeaturedProducts = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -23,7 +25,7 @@ const FeaturedProducts = () => {
     },
   });
 
-  const addToCart = async (productId: string, size: string) => {
+  const addToCart = async (productId: string, size: ProductSize) => {
     if (!user) {
       toast({
         title: "Please sign in",
@@ -41,8 +43,6 @@ const FeaturedProducts = () => {
           product_id: productId,
           size: size,
           quantity: 1,
-        }, {
-          onConflict: 'user_id,product_id,size',
         });
 
       if (error) throw error;
@@ -96,7 +96,7 @@ const FeaturedProducts = () => {
                         key={size}
                         variant="outline"
                         size="sm"
-                        onClick={() => addToCart(product.id, size)}
+                        onClick={() => addToCart(product.id, size as ProductSize)}
                       >
                         {size}
                       </Button>
