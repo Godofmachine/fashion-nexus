@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -86,6 +85,70 @@ const CartPage = () => {
     return cartItems?.reduce((total, item) => {
       return total + (item.product.price * item.quantity);
     }, 0) ?? 0;
+  };
+
+  const createOrderMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !cartItems) throw new Error("User not authenticated or cart is empty");
+      
+      const total = calculateTotal();
+      if (total <= 0) throw new Error("Cart is empty");
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          total_amount: total,
+          shipping_address: "Test Address",
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const orderItems = cartItems.map(item => ({
+        order_id: order.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        size: item.size,
+        price_at_time: item.product.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      const { error: clearCartError } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (clearCartError) throw clearCartError;
+
+      return order;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cartCount'] });
+      toast({
+        title: "Order placed successfully",
+        description: "Thank you for your purchase!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    },
+  });
+
+  const handleCheckout = () => {
+    createOrderMutation.mutate();
   };
 
   if (!user) {
@@ -185,8 +248,12 @@ const CartPage = () => {
                     </div>
                   </div>
                 </div>
-                <Button className="w-full mt-6">
-                  Proceed to Checkout
+                <Button 
+                  className="w-full mt-6"
+                  onClick={handleCheckout}
+                  disabled={createOrderMutation.isPending}
+                >
+                  {createOrderMutation.isPending ? "Processing..." : "Proceed to Checkout"}
                 </Button>
               </div>
             </div>
