@@ -1,8 +1,14 @@
 
-import { ShoppingCart, User, Menu, LogOut } from "lucide-react";
+import { ShoppingCart, User, Menu, LogOut, Settings, UserCircle } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -58,18 +64,36 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Men</Link>
-            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Women</Link>
-            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
-            <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Sale</Link>
+            <Link to="/products?category=men" className="text-gray-700 hover:text-primary transition-colors">Men</Link>
+            <Link to="/products?category=women" className="text-gray-700 hover:text-primary transition-colors">Women</Link>
+            <Link to="/products" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
+            <Link to="/products" className="text-gray-700 hover:text-primary transition-colors">Sale</Link>
           </div>
 
           <div className="flex items-center space-x-4">
             {user ? (
               <>
-                <Button variant="ghost" size="icon" className="hover:bg-gray-100">
-                  <User className="h-5 w-5" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/profile?tab=settings")}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -82,9 +106,6 @@ const Navbar = () => {
                       {cartItemsCount}
                     </span>
                   )}
-                </Button>
-                <Button variant="ghost" size="icon" className="hover:bg-gray-100" onClick={handleSignOut}>
-                  <LogOut className="h-5 w-5" />
                 </Button>
               </>
             ) : (
@@ -106,10 +127,10 @@ const Navbar = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 animate-fadeIn">
             <div className="flex flex-col space-y-4">
-              <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Men</Link>
-              <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Women</Link>
-              <Link to="/" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
-              <Link to="/" className="text-gray-700 hover:text-primary transition-colors">Sale</Link>
+              <Link to="/products?category=men" className="text-gray-700 hover:text-primary transition-colors">Men</Link>
+              <Link to="/products?category=women" className="text-gray-700 hover:text-primary transition-colors">Women</Link>
+              <Link to="/products" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
+              <Link to="/products" className="text-gray-700 hover:text-primary transition-colors">Sale</Link>
             </div>
           </div>
         )}
