@@ -99,7 +99,7 @@ const FeaturedProducts = () => {
               <CardContent className="p-4 flex-grow">
                 <h3 className="font-medium text-lg">{product.name}</h3>
                 <p className="text-accent mt-2">₦{product.price.toLocaleString()}</p>
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">{product.description}</p>
+                <p className="text-sm text-gray-600 mt-2 h-10 line-clamp-2">{product.description}</p>
               </CardContent>
               <CardFooter className="p-4 pt-0">
                 <div className="w-full space-y-2">
@@ -119,7 +119,7 @@ const FeaturedProducts = () => {
                   </div>
                   <Button
                     variant="default"
-                    className="w-full"
+                    className="w-full "
                     onClick={() => setSelectedProduct(product)}
                   >
                     View Details
