@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,13 +8,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-type ProductSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
+import { Product, ProductSize } from "@/types/product";
+import ProductDialog from "./ProductDialog";
 
 const FeaturedProducts = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
@@ -24,7 +26,7 @@ const FeaturedProducts = () => {
         .limit(4);
       
       if (error) throw error;
-      return data;
+      return data as Product[];
     },
   });
 
@@ -84,7 +86,10 @@ const FeaturedProducts = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {products?.map((product) => (
             <Card key={product.id} className="group overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col">
-              <div className="relative aspect-square overflow-hidden">
+              <div 
+                className="relative aspect-square overflow-hidden cursor-pointer"
+                onClick={() => setSelectedProduct(product)}
+              >
                 <img
                   src={product.images[0]}
                   alt={product.name}
@@ -104,7 +109,7 @@ const FeaturedProducts = () => {
                         key={size}
                         variant="outline"
                         size="sm"
-                        onClick={() => addToCart(product.id, size as ProductSize)}
+                        onClick={() => addToCart(product.id, size)}
                         className="flex items-center gap-2"
                       >
                         {size}
@@ -115,7 +120,7 @@ const FeaturedProducts = () => {
                   <Button
                     variant="default"
                     className="w-full"
-                    onClick={() => navigate(`/products/${product.id}`)}
+                    onClick={() => setSelectedProduct(product)}
                   >
                     View Details
                   </Button>
@@ -135,6 +140,12 @@ const FeaturedProducts = () => {
           </Button>
         </div>
       </div>
+      
+      <ProductDialog
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
     </section>
   );
 };

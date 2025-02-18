@@ -10,6 +10,10 @@ import AuthPage from "./pages/auth/AuthPage";
 import CartPage from "./pages/cart/CartPage";
 import ProductsPage from "./pages/products/ProductsPage";
 import ProfilePage from "./pages/profile/ProfilePage";
+import ContactPage from "./pages/customer-service/ContactPage";
+import ShippingPage from "./pages/customer-service/ShippingPage";
+import ReturnsPage from "./pages/customer-service/ReturnsPage";
+import SizeGuidePage from "./pages/customer-service/SizeGuidePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +31,10 @@ const App = () => (
             <Route path="/cart" element={<CartPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/shipping" element={<ShippingPage />} />
+            <Route path="/returns" element={<ReturnsPage />} />
+            <Route path="/size-guide" element={<SizeGuidePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
