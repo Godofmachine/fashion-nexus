@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,9 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { Search, ShoppingCart } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useNavigate, useSearchParams } from "react-router-dom";
-
-type ProductCategory = "men" | "women" | "unisex";
-type ProductSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
+import { Product, ProductCategory, ProductSize } from "@/types/product";
 
 const ProductsPage = () => {
   const [searchParams] = useSearchParams();
@@ -40,7 +37,7 @@ const ProductsPage = () => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data;
+      return data as Product[];
     },
   });
 
