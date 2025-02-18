@@ -58,7 +58,8 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link to="/" className="text-2xl font-bold text-primary">
+            <Link to="/" className="text-2xl font-bold text-primary flex">
+              <img src="/favicon.ico" alt="" className="h-8 lg:h-10 me-2" />
               BLUEKING
             </Link>
           </div>
