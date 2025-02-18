@@ -8,6 +8,7 @@ import { AuthProvider } from "@/lib/auth";
 import Index from "./pages/Index";
 import AuthPage from "./pages/auth/AuthPage";
 import CartPage from "./pages/cart/CartPage";
+import ProductsPage from "./pages/products/ProductsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/products" element={<ProductsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
