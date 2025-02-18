@@ -5,16 +5,11 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { Address, AddressInput } from "@/types/address";
 
 interface AddressFormProps {
   onSuccess?: () => void;
-  existingAddress?: {
-    id: string;
-    street: string;
-    city: string;
-    state: string;
-    postal_code: string;
-  };
+  existingAddress?: Address;
 }
 
 const AddressForm = ({ onSuccess, existingAddress }: AddressFormProps) => {
@@ -33,22 +28,28 @@ const AddressForm = ({ onSuccess, existingAddress }: AddressFormProps) => {
 
     setIsSubmitting(true);
     try {
-      const addressData = {
+      const addressData: AddressInput = {
         user_id: user.id,
         street,
         city,
         state,
         postal_code: postalCode,
+        is_default: existingAddress?.is_default ?? false
       };
 
-      const { error } = existingAddress
-        ? await supabase
-            .from('addresses')
-            .update(addressData)
-            .eq('id', existingAddress.id)
-        : await supabase
-            .from('addresses')
-            .insert([addressData]);
+      let error;
+      if (existingAddress) {
+        const { error: updateError } = await supabase
+          .from('addresses')
+          .update(addressData)
+          .eq('id', existingAddress.id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('addresses')
+          .insert([addressData]);
+        error = insertError;
+      }
 
       if (error) throw error;
 
