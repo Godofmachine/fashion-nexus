@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const ProductsPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', category, isSale, sortByNewest],
@@ -78,6 +79,10 @@ const ProductsPage = () => {
         });
 
       if (error) throw error;
+
+      // Invalidate cart queries to trigger an update
+      queryClient.invalidateQueries({ queryKey: ['cart', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['cartCount', user.id] });
 
       toast({
         title: "Added to cart",
