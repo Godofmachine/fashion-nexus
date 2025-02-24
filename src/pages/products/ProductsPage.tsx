@@ -167,7 +167,7 @@ const ProductsPage = () => {
                       </p>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 mt-2 line-clamp-2">{product.description}</p>
+                  <p className="text-sm text-gray-600 mt-2 line-clamp-2 min-h-10">{product.description}</p>
                 </CardContent>
                 <CardFooter className="p-4 pt-0">
                   <div className="w-full space-y-2">
