@@ -19,16 +19,19 @@ import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import ProductDialog from "@/components/ProductDialog";
+import { Badge } from "@/components/ui/badge";
 
 const ProductsPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const category = searchParams.get("category") as ProductCategory | null;
+  const isSale = searchParams.get("is_sale") === "true";
+  const sortByNewest = searchParams.get("sort") === "newest";
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ['products', category],
+    queryKey: ['products', category, isSale, sortByNewest],
     queryFn: async () => {
       let query = supabase
         .from('products')
@@ -36,6 +39,16 @@ const ProductsPage = () => {
       
       if (category) {
         query = query.eq('category', category);
+      }
+
+      if (isSale) {
+        query = query.eq('is_sale', true);
+      }
+      
+      if (sortByNewest) {
+        query = query.order('created_at', { ascending: false });
+      } else {
+        query = query.order('is_sale', { ascending: false });
       }
       
       const { data, error } = await query;
@@ -79,35 +92,45 @@ const ProductsPage = () => {
     }
   };
 
+  const getPageTitle = () => {
+    if (isSale) return 'Sale Items';
+    if (sortByNewest) return 'New Arrivals';
+    if (category) return `${category.charAt(0).toUpperCase() + category.slice(1)}'s Collection`;
+    return 'All Products';
+  };
+
   return (
     <div className="min-h-screen">
       <Navbar />
       <div className="container mx-auto px-4 py-24">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">
-            {category ? `${category.charAt(0).toUpperCase() + category.slice(1)}'s Collection` : 'All Products'}
+            {getPageTitle()}
           </h1>
-          <Select
-            value={category || "all"}
-            onValueChange={(value) => {
-              if (value === "all") {
-                searchParams.delete("category");
-              } else {
-                searchParams.set("category", value);
-              }
-              setSearchParams(searchParams);
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="men">Men</SelectItem>
-              <SelectItem value="women">Women</SelectItem>
-              <SelectItem value="accessories">Accessories</SelectItem>
-            </SelectContent>
-          </Select>
+          {!isSale && !sortByNewest && (
+            <Select
+              value={category || "all"}
+              onValueChange={(value) => {
+                const newSearchParams = new URLSearchParams(searchParams);
+                if (value === "all") {
+                  newSearchParams.delete("category");
+                } else {
+                  newSearchParams.set("category", value);
+                }
+                window.location.search = newSearchParams.toString();
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="men">Men</SelectItem>
+                <SelectItem value="women">Women</SelectItem>
+                <SelectItem value="accessories">Accessories</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {isLoading ? (
@@ -125,11 +148,26 @@ const ProductsPage = () => {
                     alt={product.name}
                     className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                   />
+                  {product.is_sale && (
+                    <Badge 
+                      className="absolute top-2 right-2 bg-red-500 text-white border-red-500"
+                      variant="secondary"
+                    >
+                      SALE
+                    </Badge>
+                  )}
                 </div>
                 <CardContent className="p-4">
                   <h3 className="font-medium text-lg">{product.name}</h3>
-                  <p className="text-accent mt-2">₦{product.price.toLocaleString()}</p>
-                  <p className="text-sm text-gray-600 mt-2 h-10 lg:h-15 line-clamp-2">{product.description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <p className="text-accent font-semibold">₦{product.price.toLocaleString()}</p>
+                    {product.is_sale && product.original_price && (
+                      <p className="text-gray-500 line-through text-sm">
+                        ₦{product.original_price.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2 line-clamp-2">{product.description}</p>
                 </CardContent>
                 <CardFooter className="p-4 pt-0">
                   <div className="w-full space-y-2">

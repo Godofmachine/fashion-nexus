@@ -67,8 +67,8 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/products?category=men" className="text-gray-700 hover:text-primary transition-colors">Men</Link>
             <Link to="/products?category=women" className="text-gray-700 hover:text-primary transition-colors">Women</Link>
-            <Link to="/products" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
-            <Link to="/products" className="text-gray-700 hover:text-primary transition-colors">Sale</Link>
+            <Link to="/products?sort=newest" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
+            <Link to="/products?is_sale=true" className="text-red-500 hover:text-red-600 transition-colors font-medium">Sale</Link>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -130,8 +130,8 @@ const Navbar = () => {
             <div className="flex flex-col space-y-4">
               <Link to="/products?category=men" className="text-gray-700 hover:text-primary transition-colors">Men</Link>
               <Link to="/products?category=women" className="text-gray-700 hover:text-primary transition-colors">Women</Link>
-              <Link to="/products" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
-              <Link to="/products" className="text-gray-700 hover:text-primary transition-colors">Sale</Link>
+              <Link to="/products?sort=newest" className="text-gray-700 hover:text-primary transition-colors">New Arrivals</Link>
+              <Link to="/products?is_sale=true" className="text-red-500 hover:text-red-600 transition-colors font-medium">Sale</Link>
             </div>
           </div>
         )}
