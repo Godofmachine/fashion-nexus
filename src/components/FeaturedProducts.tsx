@@ -120,7 +120,7 @@ const FeaturedProducts = () => {
               </CardContent>
               <CardFooter className="p-4 pt-0">
                 <div className="w-full space-y-2">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 ">
                     {product.sizes.map((size) => (
                       <Button
                         key={size}

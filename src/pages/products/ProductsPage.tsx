@@ -158,7 +158,7 @@ const ProductsPage = () => {
                   )}
                 </div>
                 <CardContent className="p-4">
-                  <h3 className="font-medium text-lg">{product.name}</h3>
+                  <h3 className="font-medium text-md max-sm:text-lg xl:text-lg min-h-15">{product.name}</h3>
                   <div className="flex items-center gap-2 mt-2">
                     <p className="text-accent font-semibold">₦{product.price.toLocaleString()}</p>
                     {product.is_sale && product.original_price && (
@@ -171,7 +171,7 @@ const ProductsPage = () => {
                 </CardContent>
                 <CardFooter className="p-4 pt-0">
                   <div className="w-full space-y-2">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 min-h-20">
                       {product.sizes.map((size) => (
                         <Button
                           key={size}
