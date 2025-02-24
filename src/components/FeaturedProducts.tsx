@@ -108,7 +108,7 @@ const FeaturedProducts = () => {
               </div>
               <CardContent className="p-4 flex-grow">
                 <h3 className="font-medium text-lg">{product.name}</h3>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-2">
                   <p className="text-accent font-semibold">₦{product.price.toLocaleString()}</p>
                   {product.is_sale && product.original_price && (
                     <p className="text-gray-500 line-through text-sm">

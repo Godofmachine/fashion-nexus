@@ -165,7 +165,9 @@ export type Database = {
           description: string | null
           id: string
           images: string[]
+          is_sale: boolean | null
           name: string
+          original_price: number | null
           price: number
           sizes: Database["public"]["Enums"]["product_size"][]
           stock_quantity: number
@@ -177,7 +179,9 @@ export type Database = {
           description?: string | null
           id?: string
           images?: string[]
+          is_sale?: boolean | null
           name: string
+          original_price?: number | null
           price: number
           sizes?: Database["public"]["Enums"]["product_size"][]
           stock_quantity?: number
@@ -189,7 +193,9 @@ export type Database = {
           description?: string | null
           id?: string
           images?: string[]
+          is_sale?: boolean | null
           name?: string
+          original_price?: number | null
           price?: number
           sizes?: Database["public"]["Enums"]["product_size"][]
           stock_quantity?: number
