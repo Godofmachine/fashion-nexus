@@ -31,7 +31,7 @@ const FeaturedProducts = () => {
       return data as Product[];
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    cacheTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    gcTime: 1000 * 60 * 30, // Keep in garbage collection for 30 minutes
   });
 
   const addToCart = async (productId: string, size: ProductSize) => {

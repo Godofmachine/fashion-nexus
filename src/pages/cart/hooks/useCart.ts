@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +25,7 @@ export const useCart = () => {
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    cacheTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    gcTime: 1000 * 60 * 30, // Keep in garbage collection for 30 minutes
   });
 
   const updateQuantityMutation = useMutation({
