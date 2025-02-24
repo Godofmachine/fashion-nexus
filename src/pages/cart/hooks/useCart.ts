@@ -10,7 +10,7 @@ export const useCart = () => {
   const queryClient = useQueryClient();
 
   const { data: cartItems, isLoading } = useQuery({
-    queryKey: ['cart'],
+    queryKey: ['cart', user?.id],
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
@@ -25,6 +25,8 @@ export const useCart = () => {
       return data;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    cacheTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
   });
 
   const updateQuantityMutation = useMutation({
@@ -37,7 +39,7 @@ export const useCart = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
     },
     onError: (error: any) => {
       toast({
@@ -58,7 +60,8 @@ export const useCart = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['cartCount', user?.id] });
       toast({
         title: "Item removed",
         description: "Item has been removed from your cart",
@@ -117,8 +120,8 @@ export const useCart = () => {
       return order;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      queryClient.invalidateQueries({ queryKey: ['cartCount'] });
+      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['cartCount', user?.id] });
       toast({
         title: "Order placed successfully",
         description: "Thank you for your purchase!",
