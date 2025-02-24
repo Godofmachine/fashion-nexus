@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { ShoppingCart } from "lucide-react";
@@ -23,6 +24,7 @@ const FeaturedProducts = () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .order('is_sale', { ascending: false })
         .limit(4);
       
       if (error) throw error;
@@ -95,11 +97,26 @@ const FeaturedProducts = () => {
                   alt={product.name}
                   className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                 />
+                {product.is_sale && (
+                  <Badge 
+                    className="absolute top-2 right-2 bg-red-500 text-white border-red-500"
+                    variant="secondary"
+                  >
+                    SALE
+                  </Badge>
+                )}
               </div>
               <CardContent className="p-4 flex-grow">
                 <h3 className="font-medium text-lg">{product.name}</h3>
-                <p className="text-accent mt-2">₦{product.price.toLocaleString()}</p>
-                <p className="text-sm text-gray-600 mt-2 h-10 line-clamp-2">{product.description}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <p className="text-accent font-semibold">₦{product.price.toLocaleString()}</p>
+                  {product.is_sale && product.original_price && (
+                    <p className="text-gray-500 line-through text-sm">
+                      ₦{product.original_price.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mt-2 line-clamp-2">{product.description}</p>
               </CardContent>
               <CardFooter className="p-4 pt-0">
                 <div className="w-full space-y-2">
@@ -119,7 +136,7 @@ const FeaturedProducts = () => {
                   </div>
                   <Button
                     variant="default"
-                    className="w-full "
+                    className="w-full"
                     onClick={() => setSelectedProduct(product)}
                   >
                     View Details

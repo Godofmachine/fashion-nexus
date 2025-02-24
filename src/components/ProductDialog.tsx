@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Product, ProductSize } from "@/types/product";
 import { ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -59,7 +60,17 @@ const ProductDialog = ({ product, isOpen, onClose }: ProductDialogProps) => {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{product.name}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {product.name}
+            {product.is_sale && (
+              <Badge 
+                className="bg-red-500 text-white border-red-500"
+                variant="secondary"
+              >
+                SALE
+              </Badge>
+            )}
+          </DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="aspect-square relative overflow-hidden rounded-lg">
@@ -72,9 +83,16 @@ const ProductDialog = ({ product, isOpen, onClose }: ProductDialogProps) => {
           <div className="space-y-4">
             <div>
               <h3 className="font-medium text-lg">{product.name}</h3>
-              <p className="text-accent text-xl font-semibold mt-2">
-                ₦{product.price.toLocaleString()}
-              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-accent text-xl font-semibold">
+                  ₦{product.price.toLocaleString()}
+                </p>
+                {product.is_sale && product.original_price && (
+                  <p className="text-gray-500 line-through">
+                    ₦{product.original_price.toLocaleString()}
+                  </p>
+                )}
+              </div>
             </div>
             <p className="text-gray-600">{product.description}</p>
             <div>
