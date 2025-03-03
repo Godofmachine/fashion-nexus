@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FcGoogle } from "react-icons/fc";
+import { useAuth } from "@/lib/auth";
 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState<"login" | "register" | "reset">("login");
@@ -14,7 +16,18 @@ const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<boolean>(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Check if user is already logged in and redirect
+  useEffect(() => {
+    // If there's a hash in the URL, don't redirect yet (handling OAuth callback)
+    if (user && !window.location.hash) {
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +44,6 @@ const AuthPage = () => {
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-        navigate("/");
       } else if (activeTab === "register") {
         const { error } = await supabase.auth.signUp({
           email,
@@ -42,7 +54,6 @@ const AuthPage = () => {
           title: "Welcome to Blueking!",
           description: "Please check your email to verify your account.",
         });
-        navigate("/");
       } else if (activeTab === "reset") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -74,6 +85,9 @@ const AuthPage = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            prompt: 'select_account', // Forces the user to select an account
+          }
         }
       });
       
@@ -90,6 +104,11 @@ const AuthPage = () => {
       setSocialLoading(false);
     }
   };
+
+  // Don't show auth page if user is already authenticated
+  if (user && !window.location.hash) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
