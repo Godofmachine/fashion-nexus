@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FcGoogle } from "react-icons/fc";
+import { FaApple, FaTwitter, FaFacebook } from "react-icons/fa";
 import { Mail } from "lucide-react";
 
 const AuthPage = () => {
@@ -14,6 +14,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -66,21 +67,27 @@ const AuthPage = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleSocialSignIn = async (provider: 'google' | 'apple' | 'twitter' | 'facebook') => {
     try {
+      setSocialLoading(provider);
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider,
         options: {
           redirectTo: `${window.location.origin}/`
         }
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("Social sign-in error:", error);
+        throw error;
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
         description: error.message,
       });
+      setSocialLoading(null);
     }
   };
 
@@ -201,10 +208,44 @@ const AuthPage = () => {
             type="button" 
             variant="outline" 
             className="w-full flex items-center justify-center gap-2"
-            onClick={handleGoogleSignIn}
+            onClick={() => handleSocialSignIn('google')}
+            disabled={!!socialLoading}
           >
             <FcGoogle className="h-5 w-5" />
-            Google
+            {socialLoading === 'google' ? 'Connecting...' : 'Google'}
+          </Button>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => handleSocialSignIn('apple')}
+            disabled={!!socialLoading}
+          >
+            <FaApple className="h-5 w-5" />
+            {socialLoading === 'apple' ? 'Connecting...' : 'Apple'}
+          </Button>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => handleSocialSignIn('twitter')}
+            disabled={!!socialLoading}
+          >
+            <FaTwitter className="h-5 w-5 text-blue-400" />
+            {socialLoading === 'twitter' ? 'Connecting...' : 'Twitter'}
+          </Button>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full flex items-center justify-center gap-2"
+            onClick={() => handleSocialSignIn('facebook')}
+            disabled={!!socialLoading}
+          >
+            <FaFacebook className="h-5 w-5 text-blue-600" />
+            {socialLoading === 'facebook' ? 'Connecting...' : 'Facebook'}
           </Button>
         </div>
       </div>
