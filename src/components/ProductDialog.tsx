@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import ProductReviews from "./ProductReviews";
 
 interface ProductDialogProps {
   product: Product | null;
@@ -58,7 +59,7 @@ const ProductDialog = ({ product, isOpen, onClose }: ProductDialogProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {product.name}
@@ -113,6 +114,9 @@ const ProductDialog = ({ product, isOpen, onClose }: ProductDialogProps) => {
             </div>
           </div>
         </div>
+        
+        {/* Product Reviews */}
+        <ProductReviews productId={product.id} />
       </DialogContent>
     </Dialog>
   );

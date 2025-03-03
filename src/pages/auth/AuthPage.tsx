@@ -231,7 +231,7 @@ const AuthPage = () => {
             disabled={socialLoading}
           >
             <FcGoogle className="h-5 w-5" />
-            {socialLoading ? 'Connecting...' : 'Sign in with Google'}
+            {socialLoading ? 'Connecting...' : activeTab === "register" ? 'Sign up with Google' : 'Sign in with Google'}
           </Button>
         </div>
       </div>

@@ -10,6 +10,7 @@ import AuthPage from "./pages/auth/AuthPage";
 import CartPage from "./pages/cart/CartPage";
 import ProductsPage from "./pages/products/ProductsPage";
 import ProfilePage from "./pages/profile/ProfilePage";
+import OrdersPage from "./pages/profile/OrdersPage";
 import ContactPage from "./pages/customer-service/ContactPage";
 import ShippingPage from "./pages/customer-service/ShippingPage";
 import ReturnsPage from "./pages/customer-service/ReturnsPage";
@@ -48,6 +49,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ProfilePage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/orders" 
+                element={
+                  <ProtectedRoute>
+                    <OrdersPage />
                   </ProtectedRoute>
                 } 
               />

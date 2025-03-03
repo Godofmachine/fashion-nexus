@@ -4,8 +4,10 @@ import Navbar from "@/components/Navbar";
 import ProfileForm from "./components/ProfileForm";
 import AddressForm from "./components/AddressForm";
 import { useAuth } from "@/lib/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ShoppingBag } from "lucide-react";
 
 const ProfilePage = () => {
   const { user } = useAuth();
@@ -47,6 +49,14 @@ const ProfilePage = () => {
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
                 {/* Add account settings form here */}
+                <div className="mt-4">
+                  <Link to="/orders">
+                    <Button variant="outline" className="w-full flex items-center gap-2">
+                      <ShoppingBag className="h-4 w-4" />
+                      View My Orders
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
