@@ -12,16 +12,17 @@ import {
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: cartItemsCount } = useQuery({
-    queryKey: ['cartCount'],
+    queryKey: ['cartCount', user?.id],
     queryFn: async () => {
       if (!user) return 0;
       const { count, error } = await supabase
@@ -33,6 +34,8 @@ const Navbar = () => {
       return count ?? 0;
     },
     enabled: !!user,
+    staleTime: 1000 * 60, // Cache for 1 minute only to ensure we get relatively fresh data
+    refetchOnWindowFocus: true, // Refresh when returning to the app
   });
 
   const handleSignOut = async () => {
