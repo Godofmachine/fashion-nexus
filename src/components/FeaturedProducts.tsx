@@ -1,8 +1,6 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +9,7 @@ import { ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Product, ProductSize } from "@/types/product";
 import ProductDialog from "./ProductDialog";
+import { dataService } from "@/services/dataService";
 
 const FeaturedProducts = () => {
   const { user } = useAuth();
@@ -20,22 +19,15 @@ const FeaturedProducts = () => {
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['featuredProducts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('is_sale', { ascending: false })
-        .limit(4);
-      
-      if (error) throw error;
-      return data as Product[];
-    },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    gcTime: 1000 * 60 * 30, // Keep in garbage collection for 30 minutes
+    queryFn: () => dataService.getFeaturedProducts(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 
   const addToCart = async (productId: string, size: ProductSize) => {
-    if (!user) {
+    const activeUser = user || dataService.getCurrentUser();
+    
+    if (!activeUser) {
       toast({
         title: "Please sign in",
         description: "You need to be signed in to add items to cart",
@@ -46,16 +38,7 @@ const FeaturedProducts = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('cart_items')
-        .upsert({
-          user_id: user.id,
-          product_id: productId,
-          size: size,
-          quantity: 1,
-        });
-
-      if (error) throw error;
+      await dataService.addToCart(activeUser.id, productId, size);
 
       toast({
         title: "Added to cart",

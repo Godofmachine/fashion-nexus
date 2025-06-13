@@ -1,8 +1,6 @@
-
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import ProductDialog from "@/components/ProductDialog";
 import { Badge } from "@/components/ui/badge";
+import { dataService } from "@/services/dataService";
 
 const ProductsPage = () => {
   const [searchParams] = useSearchParams();
@@ -33,33 +32,13 @@ const ProductsPage = () => {
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', category, isSale, sortByNewest],
-    queryFn: async () => {
-      let query = supabase
-        .from('products')
-        .select('*');
-      
-      if (category) {
-        query = query.eq('category', category);
-      }
-
-      if (isSale) {
-        query = query.eq('is_sale', true);
-      }
-      
-      if (sortByNewest) {
-        query = query.order('created_at', { ascending: false });
-      } else {
-        query = query.order('is_sale', { ascending: false });
-      }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Product[];
-    },
+    queryFn: () => dataService.getProducts(category, isSale, sortByNewest),
   });
 
   const addToCart = async (productId: string, size: ProductSize) => {
-    if (!user) {
+    const activeUser = user || dataService.getCurrentUser();
+    
+    if (!activeUser) {
       toast({
         title: "Please sign in",
         description: "You need to be signed in to add items to cart",
@@ -69,20 +48,11 @@ const ProductsPage = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('cart_items')
-        .upsert({
-          user_id: user.id,
-          product_id: productId,
-          size,
-          quantity: 1,
-        });
-
-      if (error) throw error;
+      await dataService.addToCart(activeUser.id, productId, size);
 
       // Invalidate cart queries to trigger an update
-      queryClient.invalidateQueries({ queryKey: ['cart', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['cartCount', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['cart', activeUser.id] });
+      queryClient.invalidateQueries({ queryKey: ['cartCount', activeUser.id] });
 
       toast({
         title: "Added to cart",
