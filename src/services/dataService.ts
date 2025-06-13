@@ -1,244 +1,134 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Product, ProductCategory, ProductSize } from "@/types/product";
+import { Product } from "@/types/product";
 import { Review } from "@/types/review";
-import { 
-  mockProducts, 
-  mockReviews, 
-  mockCartItems, 
-  mockOrders, 
-  mockUser 
-} from "./mockData";
+import { mockProducts, mockReviews } from "./mockData";
 
-// Check multiple sources for mock mode
-const USE_MOCK_DATA = 
-  import.meta.env.VITE_USE_MOCK_DATA === 'true' ||
-  localStorage.getItem('useMockData') === 'true';
+const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true' || 
+                   localStorage.getItem('useMockData') === 'true';
 
 export const dataService = {
-  // Products
-  async getProducts(category?: ProductCategory, isSale?: boolean, sortByNewest?: boolean) {
-    if (USE_MOCK_DATA) {
-      console.log('Using mock data for products');
-      let filtered = [...mockProducts];
+  async getProducts(filters?: {
+    category?: string;
+    search?: string;
+    priceRange?: [number, number];
+    isSale?: boolean;
+    sort?: string;
+  }): Promise<Product[]> {
+    if (useMockData) {
+      let products = [...mockProducts];
       
-      if (category) {
-        filtered = filtered.filter(p => p.category === category);
-      }
-      if (isSale) {
-        filtered = filtered.filter(p => p.is_sale);
-      }
-      if (sortByNewest) {
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      if (filters) {
+        if (filters.category) {
+          products = products.filter(p => p.category === filters.category);
+        }
+        
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          products = products.filter(p => 
+            p.name.toLowerCase().includes(searchLower) ||
+            (p.description && p.description.toLowerCase().includes(searchLower))
+          );
+        }
+        
+        if (filters.priceRange) {
+          products = products.filter(p => 
+            p.price >= filters.priceRange![0] && p.price <= filters.priceRange![1]
+          );
+        }
+        
+        if (filters.isSale !== undefined) {
+          products = products.filter(p => p.is_sale === filters.isSale);
+        }
+        
+        if (filters.sort) {
+          switch (filters.sort) {
+            case 'price_asc':
+              products.sort((a, b) => a.price - b.price);
+              break;
+            case 'price_desc':
+              products.sort((a, b) => b.price - a.price);
+              break;
+            case 'newest':
+              products.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+              break;
+            case 'name':
+              products.sort((a, b) => a.name.localeCompare(b.name));
+              break;
+          }
+        }
       }
       
-      return filtered;
+      return products;
     }
 
-    try {
-      let query = supabase.from('products').select('*');
-      
-      if (category) {
-        query = query.eq('category', category);
-      }
-      if (isSale) {
-        query = query.eq('is_sale', true);
-      }
-      if (sortByNewest) {
-        query = query.order('created_at', { ascending: false });
-      } else {
-        query = query.order('is_sale', { ascending: false });
+    let query = supabase.from('products').select('*');
+    
+    if (filters) {
+      if (filters.category) {
+        query = query.eq('category', filters.category);
       }
       
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.warn('Backend unavailable, falling back to mock data', error);
-      return this.getProducts(category, isSale, sortByNewest);
+      if (filters.search) {
+        query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      }
+      
+      if (filters.priceRange) {
+        query = query.gte('price', filters.priceRange[0]).lte('price', filters.priceRange[1]);
+      }
+      
+      if (filters.isSale !== undefined) {
+        query = query.eq('is_sale', filters.isSale);
+      }
+      
+      if (filters.sort) {
+        switch (filters.sort) {
+          case 'price_asc':
+            query = query.order('price', { ascending: true });
+            break;
+          case 'price_desc':
+            query = query.order('price', { ascending: false });
+            break;
+          case 'newest':
+            query = query.order('created_at', { ascending: false });
+            break;
+          case 'name':
+            query = query.order('name', { ascending: true });
+            break;
+        }
+      }
     }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return data || [];
   },
 
-  async getFeaturedProducts() {
-    if (USE_MOCK_DATA) {
-      console.log('Using mock data for featured products');
-      return mockProducts.slice(0, 4);
+  async getReviews(productId: string): Promise<Review[]> {
+    if (useMockData) {
+      return mockReviews.filter(review => review.product_id === productId);
     }
 
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('is_sale', { ascending: false })
-        .limit(4);
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.warn('Backend unavailable, falling back to mock data', error);
-      return mockProducts.slice(0, 4);
-    }
+    // Since reviews table doesn't exist in Supabase types yet, return empty array
+    // This will be updated once the reviews table is created
+    return [];
   },
 
-  // Reviews
-  async getProductReviews(productId: string) {
-    if (USE_MOCK_DATA) {
-      console.log('Using mock data for reviews');
-      return mockReviews.filter(r => r.product_id === productId);
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('product_id', productId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.warn('Backend unavailable, falling back to mock data', error);
-      return mockReviews.filter(r => r.product_id === productId);
-    }
-  },
-
-  async addReview(review: Omit<Review, 'id' | 'created_at' | 'user_name'>) {
-    if (USE_MOCK_DATA) {
-      console.log('Mock: Adding review', review);
-      // In mock mode, just simulate success
-      return {
-        id: `mock-review-${Date.now()}`,
-        ...review,
+  async createReview(reviewData: Omit<Review, 'id' | 'created_at' | 'user_name'>): Promise<Review> {
+    if (useMockData) {
+      const newReview: Review = {
+        ...reviewData,
+        id: Math.random().toString(36).substr(2, 9),
         created_at: new Date().toISOString(),
-        user_name: mockUser.user_metadata.full_name
+        user_name: 'Mock User'
       };
+      mockReviews.push(newReview);
+      return newReview;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .insert(review)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.warn('Backend unavailable, using mock response', error);
-      return this.addReview(review);
-    }
-  },
-
-  // Cart
-  async getCartItems(userId: string) {
-    if (USE_MOCK_DATA) {
-      console.log('Using mock data for cart');
-      return mockCartItems;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('cart_items')
-        .select(`
-          *,
-          product:products (*)
-        `)
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.warn('Backend unavailable, falling back to mock data', error);
-      return mockCartItems;
-    }
-  },
-
-  async addToCart(userId: string, productId: string, size: ProductSize) {
-    if (USE_MOCK_DATA) {
-      console.log('Mock: Adding to cart', { userId, productId, size });
-      return { success: true };
-    }
-
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .upsert({
-          user_id: userId,
-          product_id: productId,
-          size,
-          quantity: 1,
-        });
-
-      if (error) throw error;
-      return { success: true };
-    } catch (error) {
-      console.warn('Backend unavailable, using mock response', error);
-      return { success: true };
-    }
-  },
-
-  // Orders
-  async getOrders(userId: string) {
-    if (USE_MOCK_DATA) {
-      console.log('Using mock data for orders');
-      return mockOrders;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.warn('Backend unavailable, falling back to mock data', error);
-      return mockOrders;
-    }
-  },
-
-  async createOrder(userId: string, cartItems: any[], total: number) {
-    if (USE_MOCK_DATA) {
-      console.log('Mock: Creating order', { userId, total });
-      return {
-        id: `mock-order-${Date.now()}`,
-        user_id: userId,
-        total_amount: total,
-        status: 'pending',
-        shipping_address: "Mock Address",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-    }
-
-    try {
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: userId,
-          total_amount: total,
-          shipping_address: "Test Address",
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-      return order;
-    } catch (error) {
-      console.warn('Backend unavailable, using mock response', error);
-      return this.createOrder(userId, cartItems, total);
-    }
-  },
-
-  // Auth
-  getCurrentUser() {
-    if (USE_MOCK_DATA) {
-      console.log('Using mock user');
-      return mockUser;
-    }
-    return null; // Let the auth system handle this normally
+    // Since reviews table doesn't exist in Supabase types yet, throw error
+    // This will be updated once the reviews table is created
+    throw new Error('Reviews functionality not yet implemented in database');
   }
 };

@@ -1,58 +1,40 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Star, StarHalf } from "lucide-react";
-import { Review } from "@/types/review";
+import { Star } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 import { dataService } from "@/services/dataService";
+import { Review } from "@/types/review";
 
 interface ProductReviewsProps {
   productId: string;
 }
 
 const ProductReviews = ({ productId }: ProductReviewsProps) => {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
-  const [hoveredRating, setHoveredRating] = useState(0);
 
-  // Fetch reviews for the product using dataService
-  const { data: reviews, isLoading } = useQuery({
+  const { data: reviews = [], isLoading } = useQuery({
     queryKey: ['reviews', productId],
-    queryFn: () => dataService.getProductReviews(productId),
+    queryFn: () => dataService.getReviews(productId),
   });
 
-  // Check if user has already reviewed this product
-  const userReview = reviews?.find(review => review.user_id === user?.id);
-
-  // Create a new review
   const createReviewMutation = useMutation({
-    mutationFn: async () => {
-      const activeUser = user || dataService.getCurrentUser();
-      if (!activeUser) throw new Error("You must be logged in to leave a review");
-      if (rating === 0) throw new Error("Please select a rating");
-      
-      return await dataService.addReview({
-        user_id: activeUser.id,
-        product_id: productId,
-        rating,
-        comment,
-        is_verified_purchase: false, // You can implement purchase verification logic
-      });
-    },
+    mutationFn: (reviewData: Omit<Review, 'id' | 'created_at' | 'user_name'>) =>
+      dataService.createReview(reviewData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews', productId] });
       setRating(0);
       setComment("");
       toast({
         title: "Review submitted",
-        description: "Thank you for your feedback!",
+        description: "Thank you for your review!",
       });
     },
     onError: (error: any) => {
@@ -61,128 +43,112 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         title: "Error",
         description: error.message,
       });
-    }
+    },
   });
 
-  // Calculate average rating
-  const averageRating = reviews?.length 
-    ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
-    : 0;
+  const handleSubmitReview = () => {
+    if (!user || !rating) return;
 
-  // Handle rating stars UI
-  const renderStars = (value: number, interactive = false) => {
-    return (
-      <div className="flex">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <div 
-            key={star}
-            className={`${interactive ? 'cursor-pointer' : ''} text-yellow-400`}
-            onMouseEnter={() => interactive && setHoveredRating(star)}
-            onMouseLeave={() => interactive && setHoveredRating(0)}
-            onClick={() => interactive && setRating(star)}
-          >
-            {interactive ? (
-              <Star 
-                className={`h-6 w-6 ${(hoveredRating || rating) >= star ? 'fill-yellow-400' : 'fill-none'}`} 
-              />
-            ) : (
-              star <= Math.floor(value) ? (
-                <Star className="h-5 w-5 fill-yellow-400" />
-              ) : star - 0.5 <= value ? (
-                <StarHalf className="h-5 w-5 fill-yellow-400" />
-              ) : (
-                <Star className="h-5 w-5 fill-none" />
-              )
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    createReviewMutation.mutate({
+      user_id: user.id,
+      product_id: productId,
+      rating,
+      comment,
+      is_verified_purchase: false,
     });
   };
 
+  const renderStars = (count: number, interactive = false) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`h-4 w-4 ${
+          i < count ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+        } ${interactive ? "cursor-pointer" : ""}`}
+        onClick={interactive ? () => setRating(i + 1) : undefined}
+      />
+    ));
+  };
+
+  const averageRating = reviews.length > 0 
+    ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
+    : 0;
+
   if (isLoading) {
-    return <div className="text-center py-4">Loading reviews...</div>;
+    return <div>Loading reviews...</div>;
   }
 
   return (
     <div className="mt-8">
-      <h3 className="text-xl font-semibold mb-4">Customer Reviews</h3>
+      <h3 className="text-lg font-semibold mb-4">Customer Reviews</h3>
       
-      {/* Review Summary */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex items-center">
-          {renderStars(averageRating)}
-          <span className="ml-2 font-medium">
-            {averageRating.toFixed(1)} out of 5
-          </span>
-        </div>
-        <div className="text-sm text-gray-500">
-          {reviews?.length} {reviews?.length === 1 ? 'review' : 'reviews'}
-        </div>
-      </div>
-      
-      {/* Write a review section */}
-      {(user || dataService.getCurrentUser()) && !userReview && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-8">
-          <h4 className="font-medium mb-3">Write a Review</h4>
-          <div className="mb-3">
-            <p className="text-sm mb-2">Rating</p>
-            {renderStars(rating, true)}
+      {reviews.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2">
+            <div className="flex">{renderStars(Math.round(averageRating))}</div>
+            <span className="text-sm text-gray-600">
+              ({averageRating.toFixed(1)} out of 5 from {reviews.length} reviews)
+            </span>
           </div>
-          <div className="mb-3">
-            <Textarea
-              placeholder="Share your experience with this product..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="min-h-24"
-            />
-          </div>
-          <Button 
-            onClick={() => createReviewMutation.mutate()}
-            disabled={createReviewMutation.isPending || rating === 0}
-          >
-            {createReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
-          </Button>
         </div>
       )}
-      
-      {/* Reviews list */}
-      <div className="space-y-6">
-        {reviews && reviews.length > 0 ? (
-          reviews.map((review) => (
-            <div key={review.id} className="border-b pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">{review.user_name || 'Anonymous'}</p>
-                  {review.is_verified_purchase && (
-                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
-                      Verified Purchase
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-gray-500">{formatDate(review.created_at)}</p>
-              </div>
-              <div className="my-1">
-                {renderStars(review.rating)}
-              </div>
-              <p className="mt-2 text-gray-700">{review.comment}</p>
+
+      {user && (
+        <div className="mb-6 p-4 border rounded-lg">
+          <h4 className="font-medium mb-3">Write a Review</h4>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Rating</label>
+              <div className="flex">{renderStars(rating, true)}</div>
             </div>
-          ))
-        ) : (
-          <p className="text-gray-500 text-center py-4">
-            No reviews yet. Be the first to review this product!
-          </p>
-        )}
+            <div>
+              <label className="block text-sm font-medium mb-1">Comment</label>
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Share your thoughts about this product..."
+                className="w-full"
+              />
+            </div>
+            <Button 
+              onClick={handleSubmitReview}
+              disabled={!rating || createReviewMutation.isPending}
+            >
+              {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {reviews.map((review) => (
+          <div key={review.id} className="border-b pb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{review.user_name}</span>
+                {review.is_verified_purchase && (
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Verified Purchase
+                  </span>
+                )}
+              </div>
+              <div className="flex">{renderStars(review.rating)}</div>
+            </div>
+            {review.comment && (
+              <p className="text-gray-700 mb-2">{review.comment}</p>
+            )}
+            <p className="text-xs text-gray-500">
+              {new Date(review.created_at).toLocaleDateString()}
+            </p>
+          </div>
+        ))}
       </div>
+
+      {reviews.length === 0 && (
+        <p className="text-gray-500 text-center py-8">
+          No reviews yet. Be the first to review this product!
+        </p>
+      )}
     </div>
   );
 };

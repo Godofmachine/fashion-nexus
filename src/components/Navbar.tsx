@@ -1,5 +1,5 @@
 
-import { ShoppingCart, User, Menu, LogOut, Settings, UserCircle, Home, X } from "lucide-react";
+import { ShoppingCart, User, Menu, LogOut, Settings, UserCircle, Home, X, Crown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -84,25 +84,29 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled 
-        ? 'bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-sm' 
-        : 'bg-white/80 backdrop-blur-md border-b border-gray-100'
+        ? 'bg-white/95 backdrop-blur-lg border-b border-gray-200 shadow-lg' 
+        : 'bg-white/90 backdrop-blur-md border-b border-gray-100'
     }`}>
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 lg:h-18">
+        <div className="flex items-center justify-between h-20">
           {/* Logo Section */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <Link 
               to="/" 
-              className="flex items-center space-x-2 group transition-transform duration-200 hover:scale-105"
+              className="flex items-center space-x-3 group transition-transform duration-200 hover:scale-105"
             >
-              <img 
-                src="/favicon.ico" 
-                alt="BLUEKING" 
-                className="h-8 lg:h-10 transition-transform duration-200 group-hover:rotate-6" 
-              />
-              <span className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                BLUEKING
-              </span>
+              <div className="relative">
+                <Crown className="h-10 w-10 text-primary transition-transform duration-200 group-hover:rotate-12" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-20 rounded-full blur-sm"></div>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-none">
+                  BLUEKING
+                </span>
+                <span className="text-xs lg:text-sm font-medium text-gray-600 tracking-wider uppercase leading-none">
+                  Fashion
+                </span>
+              </div>
             </Link>
           </div>
 
@@ -114,23 +118,28 @@ const Navbar = () => {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 hover:bg-gray-100 ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 relative group ${
                     isActiveRoute(link.to)
-                      ? 'text-primary bg-gray-50 border border-gray-200'
+                      ? 'text-primary bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20'
                       : link.isSpecial
                       ? 'text-red-500 hover:text-red-600 hover:bg-red-50'
-                      : 'text-gray-700 hover:text-primary'
+                      : 'text-gray-700 hover:text-primary hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5'
                   }`}
                 >
                   {IconComponent && <IconComponent className="h-4 w-4" />}
                   <span>{link.label}</span>
+                  {link.isSpecial && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full animate-pulse">
+                      Hot
+                    </span>
+                  )}
                 </Link>
               );
             })}
           </div>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {user ? (
               <>
                 {/* User Dropdown */}
@@ -139,14 +148,14 @@ const Navbar = () => {
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="hover:bg-gray-100 transition-colors duration-200 relative"
+                      className="hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 transition-all duration-200 relative h-10 w-10 rounded-full"
                     >
                       <User className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
+                  <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-xl rounded-lg">
                     <div className="px-3 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {user.email}
                       </p>
                     </div>
@@ -170,12 +179,12 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hover:bg-gray-100 relative transition-all duration-200 hover:scale-105"
+                  className="hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 relative transition-all duration-200 hover:scale-105 h-10 w-10 rounded-full"
                   onClick={() => navigate("/cart")}
                 >
                   <ShoppingCart className="h-5 w-5" />
                   {cartItemsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground w-5 h-5 rounded-full text-xs flex items-center justify-center font-medium animate-pulse">
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-red-600 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center font-bold animate-pulse shadow-lg">
                       {cartItemsCount > 9 ? '9+' : cartItemsCount}
                     </span>
                   )}
@@ -185,7 +194,7 @@ const Navbar = () => {
               <Button 
                 variant="default" 
                 onClick={() => navigate("/auth")}
-                className="px-6 hover:scale-105 transition-transform duration-200"
+                className="px-6 py-2 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-medium rounded-lg hover:scale-105 transition-all duration-200 shadow-lg"
               >
                 Sign In
               </Button>
@@ -195,7 +204,7 @@ const Navbar = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden hover:bg-gray-100 transition-colors duration-200"
+              className="md:hidden hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 transition-all duration-200 h-10 w-10 rounded-full"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? (
@@ -218,16 +227,21 @@ const Navbar = () => {
                     key={link.to}
                     to={link.to}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 hover:bg-gray-50 ${
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 hover:bg-gradient-to-r relative ${
                       isActiveRoute(link.to)
-                        ? 'text-primary bg-gray-50 border-l-4 border-primary'
+                        ? 'text-primary bg-gradient-to-r from-primary/10 to-accent/10 border-l-4 border-primary'
                         : link.isSpecial
-                        ? 'text-red-500 hover:text-red-600'
-                        : 'text-gray-700 hover:text-primary'
+                        ? 'text-red-500 hover:text-red-600 hover:from-red-50 hover:to-red-50'
+                        : 'text-gray-700 hover:text-primary hover:from-primary/5 hover:to-accent/5'
                     }`}
                   >
                     {IconComponent && <IconComponent className="h-5 w-5" />}
                     <span>{link.label}</span>
+                    {link.isSpecial && (
+                      <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                        Hot
+                      </span>
+                    )}
                   </Link>
                 );
               })}
