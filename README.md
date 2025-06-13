@@ -29,3 +29,38 @@ npm install
 
 # 4. Start the development server
 npm run dev
+
+🛠 Tech Stack
+
+Built with:
+
+    Vite
+
+    React
+
+    TypeScript
+
+    Tailwind CSS
+
+    shadcn/ui
+
+🌐 Deployment
+
+Deployable via Netlify, Vercel, or Render.
+
+    Build Command: npm run build
+
+    Output Directory: dist
+
+✨ Custom Domain
+
+Custom domains can be configured directly in your hosting provider’s dashboard.
+👨🏽‍💻 Author
+
+Designed and developed by Blueking – Frontend Developer & Visual Designer.
+📄 License
+
+This project is open source and available under the MIT License.
+
+
+
