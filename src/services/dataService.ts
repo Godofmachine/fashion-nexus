@@ -10,8 +10,10 @@ import {
   mockUser 
 } from "./mockData";
 
-// Flag to control whether to use mock data
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+// Check multiple sources for mock mode
+const USE_MOCK_DATA = 
+  import.meta.env.VITE_USE_MOCK_DATA === 'true' ||
+  localStorage.getItem('useMockData') === 'true';
 
 export const dataService = {
   // Products

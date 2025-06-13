@@ -1,6 +1,8 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { dataService } from "@/services/dataService";
 
 export const useCart = () => {
@@ -32,7 +34,7 @@ export const useCart = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['cart', activeUser?.id] });
     },
     onError: (error: any) => {
       toast({
@@ -53,8 +55,8 @@ export const useCart = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['cartCount', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['cart', activeUser?.id] });
+      queryClient.invalidateQueries({ queryKey: ['cartCount', activeUser?.id] });
       toast({
         title: "Item removed",
         description: "Item has been removed from your cart",

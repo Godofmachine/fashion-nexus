@@ -1,16 +1,9 @@
+
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Product, ProductCategory, ProductSize } from "@/types/product";
+import { Product, ProductSize } from "@/types/product";
 import { ShoppingCart } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -18,22 +11,29 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import ProductDialog from "@/components/ProductDialog";
 import { Badge } from "@/components/ui/badge";
+import ProductFilters from "@/components/ProductFilters";
+import { useProductFilters } from "@/hooks/useProductFilters";
 import { dataService } from "@/services/dataService";
 
 const ProductsPage = () => {
-  const [searchParams] = useSearchParams();
-  const category = searchParams.get("category") as ProductCategory | null;
-  const isSale = searchParams.get("is_sale") === "true";
-  const sortByNewest = searchParams.get("sort") === "newest";
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ['products', category, isSale, sortByNewest],
-    queryFn: () => dataService.getProducts(category, isSale, sortByNewest),
+  const { data: allProducts, isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => dataService.getProducts(),
   });
+
+  const {
+    filters,
+    setFilters,
+    clearFilters,
+    filteredProducts,
+    totalProducts,
+    filteredCount,
+  } = useProductFilters(allProducts);
 
   const addToCart = async (productId: string, size: ProductSize) => {
     const activeUser = user || dataService.getCurrentUser();
@@ -67,52 +67,38 @@ const ProductsPage = () => {
     }
   };
 
-  const getPageTitle = () => {
-    if (isSale) return 'Sale Items';
-    if (sortByNewest) return 'New Arrivals';
-    if (category) return `${category.charAt(0).toUpperCase() + category.slice(1)}'s Collection`;
-    return 'All Products';
-  };
-
   return (
     <div className="min-h-screen">
       <Navbar />
       <div className="container mx-auto px-4 py-24">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">
-            {getPageTitle()}
-          </h1>
-          {!isSale && !sortByNewest && (
-            <Select
-              value={category || "all"}
-              onValueChange={(value) => {
-                const newSearchParams = new URLSearchParams(searchParams);
-                if (value === "all") {
-                  newSearchParams.delete("category");
-                } else {
-                  newSearchParams.set("category", value);
-                }
-                window.location.search = newSearchParams.toString();
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="men">Men</SelectItem>
-                <SelectItem value="women">Women</SelectItem>
-                <SelectItem value="accessories">Accessories</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold mb-4">All Products</h1>
+          
+          {/* Search and Filters */}
+          <ProductFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            onClearFilters={clearFilters}
+          />
+          
+          {/* Results Summary */}
+          <div className="mt-4 text-sm text-gray-600">
+            Showing {filteredCount} of {totalProducts} products
+          </div>
         </div>
 
         {isLoading ? (
           <div className="text-center py-12">Loading products...</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg mb-4">No products found matching your criteria</p>
+            <Button onClick={clearFilters} variant="outline">
+              Clear Filters
+            </Button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products?.map((product) => (
+            {filteredProducts.map((product) => (
               <Card key={product.id} className="group overflow-hidden">
                 <div 
                   className="relative aspect-square overflow-hidden cursor-pointer"

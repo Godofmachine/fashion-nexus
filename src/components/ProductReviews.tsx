@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Star, StarHalf } from "lucide-react";
 import { Review } from "@/types/review";
+import { dataService } from "@/services/dataService";
 
 interface ProductReviewsProps {
   productId: string;
@@ -22,128 +22,37 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
   const [comment, setComment] = useState("");
   const [hoveredRating, setHoveredRating] = useState(0);
 
-  // Fetch reviews for the product
+  // Fetch reviews for the product using dataService
   const { data: reviews, isLoading } = useQuery({
     queryKey: ['reviews', productId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select(`
-          id,
-          user_id,
-          product_id,
-          rating,
-          comment,
-          created_at,
-          is_verified_purchase,
-          profiles:user_id (full_name)
-        `)
-        .eq('product_id', productId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // Transform the data to match our Review type
-      return data.map((review) => ({
-        ...review,
-        user_name: review.profiles?.full_name || 'Anonymous',
-      })) as Review[];
-    },
+    queryFn: () => dataService.getProductReviews(productId),
   });
 
   // Check if user has already reviewed this product
-  const { data: userReview } = useQuery({
-    queryKey: ['userReview', productId, user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('product_id', productId)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error) {
-        if (error.code === 'PGRST116') return null; // No rows returned
-        throw error;
-      }
-      
-      return data;
-    },
-    enabled: !!user,
-  });
+  const userReview = reviews?.find(review => review.user_id === user?.id);
 
   // Create a new review
   const createReviewMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error("You must be logged in to leave a review");
+      const activeUser = user || dataService.getCurrentUser();
+      if (!activeUser) throw new Error("You must be logged in to leave a review");
       if (rating === 0) throw new Error("Please select a rating");
       
-      const { data: verificationData, error: verificationError } = await supabase
-        .from('order_items')
-        .select('id')
-        .eq('product_id', productId)
-        .filter('orders.user_id', 'eq', user.id)
-        .limit(1);
-      
-      if (verificationError) throw verificationError;
-      
-      const isVerifiedPurchase = verificationData && verificationData.length > 0;
-      
-      const { error } = await supabase
-        .from('reviews')
-        .insert({
-          user_id: user.id,
-          product_id: productId,
-          rating,
-          comment,
-          is_verified_purchase: isVerifiedPurchase
-        });
-      
-      if (error) throw error;
+      return await dataService.addReview({
+        user_id: activeUser.id,
+        product_id: productId,
+        rating,
+        comment,
+        is_verified_purchase: false, // You can implement purchase verification logic
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews', productId] });
-      queryClient.invalidateQueries({ queryKey: ['userReview', productId, user?.id] });
       setRating(0);
       setComment("");
       toast({
         title: "Review submitted",
         description: "Thank you for your feedback!",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-    }
-  });
-
-  // Update an existing review
-  const updateReviewMutation = useMutation({
-    mutationFn: async () => {
-      if (!user || !userReview) return;
-      if (rating === 0) throw new Error("Please select a rating");
-      
-      const { error } = await supabase
-        .from('reviews')
-        .update({
-          rating,
-          comment,
-        })
-        .eq('id', userReview.id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reviews', productId] });
-      queryClient.invalidateQueries({ queryKey: ['userReview', productId, user?.id] });
-      toast({
-        title: "Review updated",
-        description: "Your review has been updated successfully!",
       });
     },
     onError: (error: any) => {
@@ -222,7 +131,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
       </div>
       
       {/* Write a review section */}
-      {user && !userReview && (
+      {(user || dataService.getCurrentUser()) && !userReview && (
         <div className="bg-gray-50 p-4 rounded-lg mb-8">
           <h4 className="font-medium mb-3">Write a Review</h4>
           <div className="mb-3">
@@ -246,31 +155,6 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         </div>
       )}
       
-      {/* Edit existing review */}
-      {user && userReview && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-8">
-          <h4 className="font-medium mb-3">Update Your Review</h4>
-          <div className="mb-3">
-            <p className="text-sm mb-2">Rating</p>
-            {renderStars(rating || userReview.rating, true)}
-          </div>
-          <div className="mb-3">
-            <Textarea
-              placeholder="Share your experience with this product..."
-              value={comment || userReview.comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="min-h-24"
-            />
-          </div>
-          <Button 
-            onClick={() => updateReviewMutation.mutate()}
-            disabled={updateReviewMutation.isPending}
-          >
-            {updateReviewMutation.isPending ? 'Updating...' : 'Update Review'}
-          </Button>
-        </div>
-      )}
-      
       {/* Reviews list */}
       <div className="space-y-6">
         {reviews && reviews.length > 0 ? (
@@ -278,7 +162,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
             <div key={review.id} className="border-b pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium">{review.user_name}</p>
+                  <p className="font-medium">{review.user_name || 'Anonymous'}</p>
                   {review.is_verified_purchase && (
                     <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 border-green-200">
                       Verified Purchase
